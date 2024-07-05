@@ -22,7 +22,7 @@ def fetch_weather_data(api_key, location):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
     response = requests.get(url)
     if response.status_code == 200:
-        print("API Response:", response.json())  # Debug print
+        print("API Response:", response.json())
         return response.json()
     else:
         print(f"Failed to fetch data: {response.status_code}")
@@ -41,14 +41,14 @@ def store_weather_data(data, location):
 
 def job():
     print("Starting Job")
-    api_key = '4f0c83da004158f2c20cff9f92995446'
-    location = 'Pune, IN'  # Replace with your desired location
+    api_key = ''
+    location = 'Pune, IN'
     data = fetch_weather_data(api_key, location)
     if data:
         store_weather_data(data, location)
-        print(f"Fetched data successfully at {datetime.now()}")  # Debug print
+        print(f"Fetched data successfully at {datetime.now()}")
     else:
-        print("Failed to fetch data")  # Debug print
+        print("Failed to fetch data")
 
 def analyze_data():
     conn = sqlite3.connect('weather_data.db')
@@ -64,7 +64,6 @@ def plot_data():
     conn = sqlite3.connect('weather_data.db')
     df = pd.read_sql_query("SELECT * FROM weather", conn)
     conn.close()
-
     plt.figure(figsize=(14, 7))
     sns.lineplot(x=pd.to_datetime(df['timestamp']), y=df['temperature'], label='Temperature')
     sns.lineplot(x=pd.to_datetime(df['timestamp']), y=df['humidity'], label='Humidity')
@@ -127,8 +126,8 @@ def plot_pie_chart():
 def daily_analysis():
     print("Running Analysis")
     avg_temp, avg_humidity = analyze_data()
-    print(f"Average Temperature: {avg_temp}°C")  # Debug print
-    print(f"Average Humidity: {avg_humidity}%")  # Debug print
+    print(f"Average Temperature: {avg_temp}°C")
+    print(f"Average Humidity: {avg_humidity}%")
     plot_data()
     plot_scatter()
     plot_histogram()
