@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import requests
-import plotly.express as px
-import webbrowser
-import os
 
 def create_db():
     conn = sqlite3.connect('weather_data.db')
@@ -22,7 +19,7 @@ def fetch_weather_data(api_key, location):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric"
     response = requests.get(url)
     if response.status_code == 200:
-        print("API Response:", response.json())
+        print("API Response:", response.json())  # Debug print
         return response.json()
     else:
         print(f"Failed to fetch data: {response.status_code}")
@@ -42,13 +39,13 @@ def store_weather_data(data, location):
 def job():
     print("Starting Job")
     api_key = ''
-    location = 'Pune, IN'
+    location = 'Pune, IN'  # Replace with your desired location
     data = fetch_weather_data(api_key, location)
     if data:
         store_weather_data(data, location)
-        print(f"Fetched data successfully at {datetime.now()}")
+        print(f"Fetched data successfully at {datetime.now()}")  # Debug print
     else:
-        print("Failed to fetch data")
+        print("Failed to fetch data")  # Debug print
 
 def analyze_data():
     conn = sqlite3.connect('weather_data.db')
@@ -60,52 +57,36 @@ def analyze_data():
 
     return avg_temp, avg_humidity
 
-def plot_data():
-    conn = sqlite3.connect('weather_data.db')
-    df = pd.read_sql_query("SELECT * FROM weather", conn)
-    conn.close()
-    plt.figure(figsize=(14, 7))
-    sns.lineplot(x=pd.to_datetime(df['timestamp']), y=df['temperature'], label='Temperature')
-    sns.lineplot(x=pd.to_datetime(df['timestamp']), y=df['humidity'], label='Humidity')
-    plt.xlabel('Time')
-    plt.ylabel('Value')
-    plt.title('Weather Trends')
-    plt.legend()
-    plt.show()
-
-def plot_scatter():
+def plot_all_data():
     conn = sqlite3.connect('weather_data.db')
     df = pd.read_sql_query("SELECT * FROM weather", conn)
     conn.close()
 
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    fig = px.scatter(df, x='temperature', y='humidity', color='timestamp',
-                     title='Temperature vs Humidity Scatter Plot',
-                     labels={'temperature': 'Temperature (°C)', 'humidity': 'Humidity (%)'},
-                     hover_data=['timestamp'])
+    fig, axs = plt.subplots(2, 2, figsize=(20, 15))
 
-    html_file = 'scatter_plot.html'
-    fig.write_html(html_file)
-    webbrowser.open('file://' + os.path.realpath(html_file))
+    # Line plot for temperature and humidity over time
+    sns.lineplot(ax=axs[0, 0], x=df['timestamp'], y=df['temperature'], label='Temperature')
+    sns.lineplot(ax=axs[0, 0], x=df['timestamp'], y=df['humidity'], label='Humidity')
+    axs[0, 0].set_xlabel('Time')
+    axs[0, 0].set_ylabel('Value')
+    axs[0, 0].set_title('Weather Trends')
+    axs[0, 0].legend()
 
-def plot_histogram():
-    conn = sqlite3.connect('weather_data.db')
-    df = pd.read_sql_query("SELECT * FROM weather", conn)
-    conn.close()
+    # Scatter plot for temperature vs. humidity
+    sns.scatterplot(ax=axs[0, 1], x='temperature', y='humidity', data=df)
+    axs[0, 1].set_xlabel('Temperature (°C)')
+    axs[0, 1].set_ylabel('Humidity (%)')
+    axs[0, 1].set_title('Temperature vs Humidity Scatter Plot')
 
-    plt.figure(figsize=(14, 7))
-    sns.histplot(df['temperature'], bins=20, kde=True)
-    plt.xlabel('Temperature (°C)')
-    plt.ylabel('Frequency')
-    plt.title('Temperature Distribution')
-    plt.show()
+    # Histogram for temperature distribution
+    sns.histplot(ax=axs[1, 0], x=df['temperature'], bins=20, kde=True)
+    axs[1, 0].set_xlabel('Temperature (°C)')
+    axs[1, 0].set_ylabel('Frequency')
+    axs[1, 0].set_title('Temperature Distribution')
 
-def plot_pie_chart():
-    conn = sqlite3.connect('weather_data.db')
-    df = pd.read_sql_query("SELECT * FROM weather", conn)
-    conn.close()
-
+    # Pie chart for humidity distribution
     conditions = [
         (df['humidity'] < 30),
         (df['humidity'] >= 30) & (df['humidity'] <= 60),
@@ -117,21 +98,18 @@ def plot_pie_chart():
     humidity_counts = df['humidity_category'].value_counts().reset_index()
     humidity_counts.columns = ['Category', 'Count']
 
-    fig = px.pie(humidity_counts, names='Category', values='Count', title='Humidity Distribution')
+    axs[1, 1].pie(humidity_counts['Count'], labels=humidity_counts['Category'], autopct='%1.1f%%', startangle=140)
+    axs[1, 1].set_title('Humidity Distribution')
 
-    html_file = 'pie_chart.html'
-    fig.write_html(html_file)
-    webbrowser.open('file://' + os.path.realpath(html_file))
+    plt.tight_layout()
+    plt.show()
 
 def daily_analysis():
     print("Running Analysis")
     avg_temp, avg_humidity = analyze_data()
-    print(f"Average Temperature: {avg_temp}°C")
-    print(f"Average Humidity: {avg_humidity}%")
-    plot_data()
-    plot_scatter()
-    plot_histogram()
-    plot_pie_chart()
+    print(f"Average Temperature: {avg_temp}°C")  # Debug print
+    print(f"Average Humidity: {avg_humidity}%")  # Debug print
+    plot_all_data()
 
 if __name__ == "__main__":
     create_db()
